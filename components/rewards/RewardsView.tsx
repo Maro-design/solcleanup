@@ -199,7 +199,7 @@ export function RewardsView() {
           <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-accent opacity-[0.10] blur-3xl" />
           <h2 className="display relative text-32 font-medium text-hi md:text-48">Bring your friends and start earning</h2>
           <p className="relative mt-4 max-w-[520px] text-16 text-mid">
-            Get {SHARE} of our fee every time someone you invited claims through SolCleanup. They pay the normal {FEE_PERCENT_LABEL}, nothing extra.
+            Get {SHARE} of our fee every time someone you invited claims through SolCleanup.
           </p>
           <p className="relative mt-3 max-w-[520px] text-12 text-meta">
             Paid on-chain in the same transaction as their claim. Keep at least 0.001 SOL in your wallet to receive rewards.
