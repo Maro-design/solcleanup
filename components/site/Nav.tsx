@@ -181,7 +181,7 @@ export function Nav() {
             <ArrowUpRight size={14} strokeWidth={1.5} aria-hidden />
           </a>
           <ThemeToggle />
-          <ConnectButton size="sm" compact className="rounded-full!" />
+          <ConnectButton size="sm" compact menu className="rounded-full!" />
           <button
             type="button"
             className="inline-flex size-10 items-center justify-center rounded-lg text-mid hover:text-hi xl:hidden"
