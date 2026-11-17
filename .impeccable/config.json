@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-11-17T02:50:08.293Z",
+        "reason": "Claude: functional slide-to-claim shimmer label (.slide-shimmer), user asked for slide to claim; not a decorative heading"
+      }
+    ]
+  }
+}
