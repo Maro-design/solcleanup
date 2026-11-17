@@ -13,7 +13,7 @@ import { useScan } from "@/hooks/useScan";
 import { useClose } from "@/hooks/useClose";
 import { computeTotals, type ScannedAccount } from "@/lib/scan";
 import { makeBatches } from "@/lib/close";
-import { FEE_PERCENT_LABEL, LAMPORTS_PER_SIGNATURE, PAGE_SIZE } from "@/lib/config";
+import { LAMPORTS_PER_SIGNATURE, PAGE_SIZE } from "@/lib/config";
 import { formatSol, formatUsd, plural, shortAddress } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Button } from "@/components/ui/Button";
@@ -235,8 +235,7 @@ export function Dashboard({ owner: ownerKey, readOnly = false }: { owner: Public
                 label="You'll receive"
                 foot={
                   <>
-                    {result.solPriceUsd ? `≈ ${formatUsd((Math.max(0, selection.netLamports - minNetworkFee) / 1e9) * result.solPriceUsd)} · ` : ""}
-                    after the {FEE_PERCENT_LABEL} fee ({formatSol(selection.feeLamports)} SOL) and network fees
+                    {result.solPriceUsd ? `≈ ${formatUsd((Math.max(0, selection.netLamports - minNetworkFee) / 1e9) * result.solPriceUsd)}` : ""}
                   </>
                 }
               >
