@@ -9,6 +9,7 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Check } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { FEE_PERCENT_LABEL, MAX_CLOSES_PER_TX } from "@/lib/config";
+import { HOW_STEPS } from "@/lib/content/howItWorks";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -56,12 +57,12 @@ function Dot({ tone }: { tone: "hi" | "warn" | "mid" | "low" }) {
 
 function ScanPanel() {
   const rows: [string, string, string, "hi" | "warn" | "mid" | "low"][] = [
-    ["SPL", "Empty", "0.00204", "hi"],
-    ["SPL", "Empty", "0.00204", "hi"],
-    ["2022", "Empty", "0.00210", "hi"],
-    ["SPL", "NFT, protected", "0.00204", "low"],
-    ["SPL", "$41 balance, protected", "0.00204", "warn"],
-    ["SPL", "Dust, $0.12", "0.00204", "mid"],
+    ["SPL", "Empty", "0.00149", "hi"],
+    ["SPL", "Empty", "0.00149", "hi"],
+    ["2022", "Empty", "0.00151", "hi"],
+    ["SPL", "NFT, protected", "0.00149", "low"],
+    ["SPL", "$41 balance, protected", "0.00149", "warn"],
+    ["SPL", "Dust, $0.12", "0.00149", "mid"],
   ];
   return (
     <div className="font-mono text-12">
@@ -132,41 +133,8 @@ function SignPanel() {
   );
 }
 
-const STEPS: { title: string; body: ReactNode; panel: ReactNode }[] = [
-  {
-    title: "Scan",
-    body: (
-      <>
-        SolCleanup reads every account your wallet owns under both Solana token programs, then checks each token&apos;s
-        price and settings. Accounts holding zero tokens are marked empty, and balances worth under $2 are marked dust you can choose to burn. Anything worth $2 or more, plus NFTs, LP and staking
-        tokens and unusual accounts, is marked protected and can&apos;t be selected.
-      </>
-    ),
-    panel: <ScanPanel />,
-  },
-  {
-    title: "Review",
-    body: (
-      <>
-        Before your wallet opens, you see exactly what you get: the rent, the {FEE_PERCENT_LABEL} service fee, the estimated
-        network fee and the net amount. The selected accounts are read again to confirm they&apos;re still empty, and every
-        transaction is simulated against the live chain.
-      </>
-    ),
-    panel: <ReviewPanel />,
-  },
-  {
-    title: "Sign once",
-    body: (
-      <>
-        Accounts close in transactions of up to {MAX_CLOSES_PER_TX}. The fee is paid inside the same transaction as the closes,
-        so it can only be paid if they succeed. One approval covers every transaction, and each one links to Solscan when it
-        lands.
-      </>
-    ),
-    panel: <SignPanel />,
-  },
-];
+const PANELS: ReactNode[] = [<ScanPanel key="scan" />, <ReviewPanel key="review" />, <SignPanel key="sign" />];
+const STEPS = HOW_STEPS.map((step, i) => ({ ...step, body: step.text, panel: PANELS[i] }));
 
 function StepText({ index, onActive, children, title }: { index: number; onActive: (i: number) => void; children: ReactNode; title: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -177,12 +145,12 @@ function StepText({ index, onActive, children, title }: { index: number; onActiv
   const last = index === STEPS.length - 1;
   return (
     <div ref={ref} className={`lg:pt-24 ${last ? "lg:min-h-[48vh]" : "lg:min-h-[64vh]"}`}>
-      <h3 className="heading text-32 font-medium text-hi">
+      <h2 className="heading text-32 font-medium text-hi">
         <span className="mr-3 font-mono text-20 text-meta tnum lg:hidden" aria-hidden>
           {index + 1}
         </span>
         {title}
-      </h3>
+      </h2>
       <p className="mt-4 max-w-[480px] text-16 text-mid">{children}</p>
       {/* On small screens the panel sits inline with its step. */}
       <GlassStage className="mt-8 lg:hidden">{STEPS[index]?.panel}</GlassStage>
@@ -197,9 +165,9 @@ export function HowItWorks() {
     <section id="how" className="mx-auto w-full max-w-[1200px] scroll-mt-24 px-6" aria-labelledby="how-title">
       <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 lg:gap-16">
         <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          <h2 id="how-title" className="heading text-32 font-medium text-hi md:text-48">
+          <h1 id="how-title" className="heading text-32 font-medium text-hi md:text-48">
             How it works
-          </h2>
+          </h1>
           <p className="mt-6 max-w-[440px] text-16 text-mid">Three steps, one approval. Nothing reaches your wallet until it has passed every check.</p>
           <ol className="mt-8 hidden gap-1 lg:flex lg:flex-col" aria-label="Steps">
             {STEPS.map((s, i) => (
