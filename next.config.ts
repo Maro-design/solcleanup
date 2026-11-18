@@ -4,6 +4,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   reactStrictMode: true,
+  // Preview images rendered on demand read Geist from node_modules at runtime;
+  // file tracing can't see that, so ship the font files with those functions.
+  outputFileTracingIncludes: {
+    "/check/**": [
+      "./node_modules/geist/dist/fonts/geist-sans/Geist-Regular.ttf",
+      "./node_modules/geist/dist/fonts/geist-sans/Geist-SemiBold.ttf",
+      "./node_modules/geist/dist/fonts/geist-mono/GeistMono-Medium.ttf",
+    ],
+  },
   poweredByHeader: false,
   images: {
     // Token logos come from many hosts; we render them with a plain <img> and
