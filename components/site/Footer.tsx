@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { FooterWordmark } from "./FooterWordmark";
-import { FEE_WALLET, GITHUB_URL, X_URL, solscanAccount } from "@/lib/config";
+import { FEE_WALLET, GITHUB_URL, VALUE_THRESHOLD_USD, X_URL, solscanAccount } from "@/lib/config";
 
 export function Footer() {
   const social = [
@@ -35,6 +35,17 @@ export function Footer() {
         </div>
         <nav aria-label="Footer">
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-14 md:flex-col">
+            {[
+              { href: "/check", label: "Check a wallet" },
+              { href: "/how-it-works", label: "How it works" },
+              { href: "/learn", label: "Learn" },
+            ].map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="text-mid hover:text-hi">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
             <li>
               <Link href="/docs" className="text-mid hover:text-hi">
                 Docs
@@ -62,7 +73,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <p className="mx-auto max-w-[1200px] px-6 py-6 text-12 text-meta">
-          Not financial advice. Closing an account is permanent; SolCleanup closes empty accounts, and burns dust under $2 only when you choose to. Use at your own
+          Not financial advice. Closing an account is permanent; SolCleanup closes empty accounts, and burns dust under ${VALUE_THRESHOLD_USD} only when you choose to. Use at your own
           discretion.
         </p>
       </div>
