@@ -22,6 +22,7 @@ export const REFERRAL_SHARE_BPS = 2500;
  */
 export const REFERRAL_SHARE_OVERRIDES: Readonly<Record<string, number>> = {
   "38u6NGpSwadrD8VVtFo9LiDdqj4Mt9xmz4Kbt2kSWEuE": 4000,
+  "BAr68J6AojVHar4hJXgaLM25HRKHN96DAJCDwPYpgCGP": 4000,
 };
 /** The referral share for a given referrer wallet, in basis points of the fee. */
 export const referralShareBps = (wallet?: string | null): number =>
