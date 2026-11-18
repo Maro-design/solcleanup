@@ -65,11 +65,14 @@ function canopyDepth(dataLength: number, data: Uint8Array): number | null {
   return nodes <= 0 ? 0 : Math.max(0, Math.log2(nodes + 2) - 1);
 }
 
-/** Every burnable v1 cNFT the owner holds. Returns [] when the RPC has no DAS. */
-export async function fetchCnfts(connection: Connection, owner: string): Promise<CnftAsset[]> {
+/**
+ * Every burnable v1 cNFT the owner holds. Returns [] when the RPC has no DAS.
+ * `preloaded` reuses compressed items from the scan's asset sweep.
+ */
+export async function fetchCnfts(connection: Connection, owner: string, preloaded?: unknown[]): Promise<CnftAsset[]> {
   const endpoint = connection.rpcEndpoint;
-  const items: unknown[] = [];
-  try {
+  const items: unknown[] = preloaded ? [...preloaded] : [];
+  if (!preloaded) try {
     for (let page = 1; page <= 10; page++) {
       const r = await das<{ items?: unknown[] }>(endpoint, "getAssetsByOwner", { ownerAddress: owner, page, limit: 1000 });
       const batch = r.items ?? [];
