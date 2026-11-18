@@ -31,6 +31,7 @@ import { LP_MINT_AUTHORITIES, LP_NAME_PATTERNS, LST_MINTS } from "./protected";
 import { fetchPrices, fetchTokenMeta, type TokenMeta } from "./market";
 import { fetchNftInfo, TokenStandard, type NftInfo, type RentSource } from "./nft";
 import { fetchCnfts, type CnftInfo } from "./cnft";
+import { sweepAssets } from "./das";
 
 export type AccountStatus = "empty" | "dust" | "protected";
 export type TokenProgram = "spl" | "token2022";
@@ -131,24 +132,40 @@ export const feeFor = (rentLamports: number): number => Math.floor((rentLamports
 async function fetchMints(connection: Connection, mints: string[]): Promise<Map<string, MintData>> {
   const out = new Map<string, MintData>();
   const keys = mints.map((m) => new PublicKey(m));
-  for (let i = 0; i < keys.length; i += 100) {
-    const slice = keys.slice(i, i + 100);
-    const infos = await connection.getMultipleParsedAccounts(slice, { commitment: "confirmed" });
-    infos.value.forEach((info, j) => {
-      const key = slice[j];
-      if (!info || !key) return;
-      const data = info.data;
-      if (!("parsed" in data)) return;
-      const parsed: unknown = data.parsed;
-      if (!isRecord(parsed) || !isRecord(parsed.info)) return;
-      const inf = parsed.info;
-      out.set(key.toBase58(), {
-        decimals: typeof inf.decimals === "number" ? inf.decimals : 0,
-        supply: typeof inf.supply === "string" ? inf.supply : "0",
-        mintAuthority: typeof inf.mintAuthority === "string" ? inf.mintAuthority : null,
-      });
-    });
-  }
+  const slices: PublicKey[][] = [];
+  for (let i = 0; i < keys.length; i += 100) slices.push(keys.slice(i, i + 100));
+  // A few requests at a time: big wallets have 100+ slices, and one by one took ~20s.
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(4, slices.length) }, async () => {
+      while (next < slices.length) {
+        const slice = slices[next++] as PublicKey[];
+        let infos: Awaited<ReturnType<Connection["getMultipleParsedAccounts"]>> | undefined;
+        for (let attempt = 0; !infos; attempt++) {
+          try {
+            infos = await connection.getMultipleParsedAccounts(slice, { commitment: "confirmed" });
+          } catch (e) {
+            if (attempt >= 3) throw e;
+            await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          }
+        }
+        infos.value.forEach((info, j) => {
+          const key = slice[j];
+          if (!info || !key) return;
+          const data = info.data;
+          if (!("parsed" in data)) return;
+          const parsed: unknown = data.parsed;
+          if (!isRecord(parsed) || !isRecord(parsed.info)) return;
+          const inf = parsed.info;
+          out.set(key.toBase58(), {
+            decimals: typeof inf.decimals === "number" ? inf.decimals : 0,
+            supply: typeof inf.supply === "string" ? inf.supply : "0",
+            mintAuthority: typeof inf.mintAuthority === "string" ? inf.mintAuthority : null,
+          });
+        });
+      }
+    }),
+  );
   return out;
 }
 
@@ -322,28 +339,44 @@ export async function scanWallet(
 
   const mints = [...new Set(raws.map((r) => r.mint))];
   report("mints", `Reading ${mints.length.toLocaleString("en-US")} token mints`, 0.5);
-  const mintData = mints.length > 0 ? await fetchMints(connection, mints) : new Map<string, MintData>();
+  // Mint data and the DAS asset sweep (names, known prices, cNFTs) run side by side.
+  const [mintData, sweep] = await Promise.all([
+    mints.length > 0 ? fetchMints(connection, mints) : Promise.resolve(new Map<string, MintData>()),
+    sweepAssets(connection.rpcEndpoint, ownerStr, raws.length).catch(() => null),
+  ]);
 
   report("market", "Fetching prices and token names", 0.75);
-  // SOL rides along in the first price request so it isn't rate-limited separately.
-  const pricedMints = [WSOL_MINT, ...new Set(raws.filter((r) => r.amountRaw !== "0").map((r) => r.mint))];
-  const prices = await fetchPrices(pricedMints);
-  // Names/logos only matter for rows a user can act on or needs to recognise:
-  // empty accounts (LP name check) and priced balances. Unpriced spam is
-  // already protected, so skipping it keeps 1000+ account wallets fast.
-  const metaMints = [...new Set(raws.filter((r) => r.amountRaw === "0" || prices.has(r.mint)).map((r) => r.mint))];
-  const meta = metaMints.length > 0 ? await fetchTokenMeta(metaMints) : new Map<string, TokenMeta>();
-  const solPriceUsd = prices.get(WSOL_MINT) ?? null;
-
   // NFTs: accounts holding exactly 1 of a 0-decimal, supply-1 mint.
-  report("market", "Looking for NFTs", 0.88);
   const nftCandidates = raws.filter((r) => {
     const md = mintData.get(r.mint);
     return r.amountRaw === "1" && md?.decimals === 0 && md.supply === "1";
   });
-  const nfts = nftCandidates.length > 0
-    ? await fetchNftInfo(connection, nftCandidates.map((r) => ({ mint: r.mint, tokenAccount: r.address, programId: r.programId }))).catch(() => new Map<string, NftInfo>())
-    : new Map<string, NftInfo>();
+  const nftsP = nftCandidates.length > 0
+    ? fetchNftInfo(connection, nftCandidates.map((r) => ({ mint: r.mint, tokenAccount: r.address, programId: r.programId }))).catch(() => new Map<string, NftInfo>())
+    : Promise.resolve(new Map<string, NftInfo>());
+  // Compressed NFTs (needs an RPC with the DAS API; silently skipped otherwise).
+  const cnftsP = fetchCnfts(connection, ownerStr, sweep?.compressed).catch(() => []);
+
+  // Prices: Jupiter for every non-zero balance, within a time budget. SOL rides
+  // along in the first request. Where the RPC also has a price we keep the
+  // higher one, so a token is never under-valued into the burnable "dust" bucket.
+  // Anything still unpriced stays protected.
+  const held = [...new Set(raws.filter((r) => r.amountRaw !== "0").map((r) => r.mint))];
+  const pricedMints = [WSOL_MINT, ...held];
+  const jup = await fetchPrices(pricedMints);
+  const prices = new Map(jup);
+  for (const [mint, p] of sweep?.prices ?? []) prices.set(mint, Math.max(p, jup.get(mint) ?? 0));
+
+  // Names/logos only matter for rows a user can act on or needs to recognise:
+  // empty accounts (LP name check) and priced balances. DAS covers nearly all
+  // of them; Jupiter fills the gaps.
+  const meta = new Map<string, TokenMeta>(sweep?.meta ?? []);
+  const metaMints = [...new Set(raws.filter((r) => (r.amountRaw === "0" || prices.has(r.mint)) && !meta.has(r.mint)).map((r) => r.mint))];
+  if (metaMints.length > 0) for (const [k, v] of await fetchTokenMeta(metaMints)) meta.set(k, v);
+  const solPriceUsd = prices.get(WSOL_MINT) ?? null;
+
+  report("market", "Looking for NFTs", 0.88);
+  const [nfts, cnfts] = await Promise.all([nftsP, cnftsP]);
 
   const accounts: ScannedAccount[] = raws.map((raw) => {
     const m = meta.get(raw.mint);
@@ -379,8 +412,6 @@ export async function scanWallet(
     };
   });
 
-  // Compressed NFTs (needs an RPC with the DAS API; silently skipped otherwise).
-  const cnfts = await fetchCnfts(connection, ownerStr).catch(() => []);
   for (const c of cnfts) {
     accounts.push({
       kind: "cnft",
