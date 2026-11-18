@@ -1,40 +1,49 @@
 "use client";
 
 /**
- * Read-only check for any wallet — no connection needed. The address is
- * mirrored into ?check= so a result can be shared as a link.
+ * Read-only check for any wallet — no connection needed. Submitting goes to
+ * /check/<address>, a shareable page that is scanned on the server. If the
+ * server couldn't finish (very large wallet, rate limit), the page hands the
+ * address back here and the scan runs in the browser instead.
  */
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { PublicKey } from "@solana/web3.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useScan } from "@/hooks/useScan";
 import { parseAddress } from "@/lib/scan";
+import { summarize, type CheckSummary } from "@/lib/checkSummary";
 import { Button } from "@/components/ui/Button";
 import { CheckResult } from "./CheckResult";
 import { ScanProgress } from "@/components/app/ScanProgress";
 import { Reveal } from "@/components/ui/Reveal";
 
-export function AddressCheck() {
-  const [value, setValue] = useState("");
-  const [target, setTarget] = useState<PublicKey | null>(null);
+interface Props {
+  /** Address of a /check/[address] page. */
+  address?: string;
+  /** Result the server already computed; when absent the browser scans `address`. */
+  initial?: CheckSummary | null;
+}
+
+export function AddressCheck({ address, initial = null }: Props) {
+  const router = useRouter();
+  const [value, setValue] = useState(address ?? "");
+  // Scan in the browser only when the server didn't (or there's no address yet).
+  const [target, setTarget] = useState<PublicKey | null>(() => (address && !initial ? parseAddress(address) : null));
   const [invalid, setInvalid] = useState(false);
   const [copied, setCopied] = useState(false);
   const { state, scan } = useScan(target, { auto: true });
   const { publicKey } = useWallet();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Pick up a shared ?check= link on load.
+  // Old ?check= links move to the shareable page.
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("check");
-    if (!q) return;
-    const key = parseAddress(q);
-    if (key) {
-      setValue(key.toBase58());
-      setTarget(key);
-    }
-  }, []);
+    if (address) return;
+    const key = parseAddress(new URLSearchParams(window.location.search).get("check") ?? "");
+    if (key) router.replace(`/check/${key.toBase58()}`);
+  }, [address, router]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -45,17 +54,21 @@ export function AddressCheck() {
       return;
     }
     setInvalid(false);
-    const url = new URL(window.location.href);
-    url.searchParams.set("check", key.toBase58());
-    url.hash = "check";
-    window.history.replaceState(null, "", url);
-    if (target?.equals(key)) void scan(key);
-    else setTarget(key);
+    const next = key.toBase58();
+    if (next === address) {
+      // Same page: rescan in the browser for fresh numbers.
+      if (target?.equals(key)) void scan(key);
+      else setTarget(key);
+      return;
+    }
+    router.push(`/check/${next}`);
   };
 
-  const copyLink = async () => {
+  const shareUrl = (owner: string) => `${window.location.origin}/check/${owner}`;
+
+  const copyLink = async (owner: string) => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(shareUrl(owner));
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
@@ -63,16 +76,18 @@ export function AddressCheck() {
     }
   };
 
-  const result = state.status === "done" ? state.result : null;
-  const isOwnWallet = !!(publicKey && target && publicKey.equals(target));
+  const scanned = state.status === "done" ? state.result : null;
+  const result = useMemo(() => (scanned ? summarize(scanned) : state.status === "idle" ? initial : null), [scanned, state.status, initial]);
+  const isOwnWallet = !!(publicKey && result && publicKey.toBase58() === result.owner);
+  const scanningAddress = target?.toBase58() ?? address;
 
   return (
     <section id="check" className="mx-auto w-full max-w-[1200px] scroll-mt-24 px-6" aria-labelledby="check-title">
       <div className="grid gap-12 lg:grid-cols-[5fr_7fr] lg:gap-16">
         <Reveal>
-          <h2 id="check-title" className="heading text-32 font-medium text-hi md:text-48">
+          <h1 id="check-title" className="heading text-32 font-medium text-hi md:text-48">
             Check any wallet
-          </h2>
+          </h1>
           <p className="mt-6 max-w-[440px] text-16 text-mid">
             Paste a Solana address to see how much rent is waiting in it. Read-only — nothing to connect, nothing to sign.
           </p>
@@ -117,7 +132,7 @@ export function AddressCheck() {
             <AnimatePresence mode="wait">
               {state.status === "scanning" && (
                 <motion.div key="scan" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                  <ScanProgress progress={state.progress} address={target?.toBase58()} />
+                  <ScanProgress progress={state.progress} address={scanningAddress} />
                 </motion.div>
               )}
               {state.status === "error" && (
@@ -126,7 +141,13 @@ export function AddressCheck() {
                 </motion.p>
               )}
               {result && (
-                <CheckResult key={`r-${result.scannedAt}`} result={result} isOwnWallet={isOwnWallet} copied={copied} onCopy={copyLink} />
+                <CheckResult
+                  key={`r-${result.scannedAt}`}
+                  result={result}
+                  isOwnWallet={isOwnWallet}
+                  copied={copied}
+                  onCopy={() => void copyLink(result.owner)}
+                />
               )}
             </AnimatePresence>
           </div>
