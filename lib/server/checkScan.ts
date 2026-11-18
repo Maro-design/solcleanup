@@ -58,16 +58,23 @@ async function checkWallet(address: string, limit: Limit, budgetMs: number): Pro
   }
   const req = await callerRequest();
   const cached = unstable_cache(
-    async (): Promise<CheckSummary> => {
+    async (): Promise<CheckSummary | { tooBig: true }> => {
       if (await rateLimit(req, limit)) throw new Limited();
-      const result = await withTimeout(scanWallet(new Connection(serverRpcUrl(), "confirmed"), owner), budgetMs);
-      return summarize(result);
+      try {
+        const result = await withTimeout(scanWallet(new Connection(serverRpcUrl(), "confirmed"), owner), budgetMs);
+        return summarize(result);
+      } catch (e) {
+        // Remember that this wallet is too large to scan here; the browser scans it instead.
+        if (e instanceof Timeout) return { tooBig: true };
+        throw e;
+      }
     },
-    ["check-summary-v1", owner.toBase58()],
+    ["check-summary-v2", owner.toBase58()],
     { revalidate: CHECK_REVALIDATE_SECONDS },
   );
   try {
-    return { ok: true, summary: await cached() };
+    const r = await cached();
+    return "tooBig" in r ? { ok: false, reason: "timeout" } : { ok: true, summary: r };
   } catch (e) {
     return { ok: false, reason: e instanceof Limited ? "limited" : e instanceof Timeout ? "timeout" : "error" };
   }
