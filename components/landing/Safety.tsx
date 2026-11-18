@@ -26,7 +26,7 @@ const GROUPS: { title: string; rules: Rule[] }[] = [
     rules: [
       {
         title: "Only zero-balance accounts",
-        body: "Empty accounts are selected by default. Dust under $2 is only burned if you add it yourself, and the review names every token before you sign.",
+        body: `Empty accounts are selected by default. Dust under $${VALUE_THRESHOLD_USD} is only burned if you add it yourself, and the review names every token before you sign.`,
       },
       {
         title: "Nothing with value is pre-selected",
@@ -61,9 +61,9 @@ export function Safety() {
   return (
     <section id="safety" className="mx-auto w-full max-w-[1200px] scroll-mt-24 px-6" aria-labelledby="safety-title">
       <Reveal>
-        <h2 id="safety-title" className="heading max-w-[720px] text-32 font-medium text-hi md:text-48">
+        <h1 id="safety-title" className="heading max-w-[720px] text-32 font-medium text-hi md:text-48">
           Built so you can&apos;t lose anything that matters
-        </h2>
+        </h1>
         <p className="mt-6 max-w-[560px] text-16 text-mid">
           The only thing SolCleanup closes is an account that holds nothing. These rules are enforced in code, not in copy.
         </p>
@@ -71,7 +71,7 @@ export function Safety() {
       <div className="mt-12 grid gap-12 border-t border-line pt-12 md:mt-16 lg:grid-cols-3 lg:gap-16">
         {GROUPS.map((g, gi) => (
           <Reveal key={g.title} delay={gi * 0.06}>
-            <h3 className="text-20 font-medium text-hi">{g.title}</h3>
+            <h2 className="text-20 font-medium text-hi">{g.title}</h2>
             <ul className="mt-6 space-y-6">
               {g.rules.map((r) => (
                 <li key={r.title}>
