@@ -15,6 +15,17 @@ export const FEE_BPS = 800; // 8% — single source of truth, easy to change
  * a second transfer in the same transaction; the user pays the same 8%.
  */
 export const REFERRAL_SHARE_BPS = 2500;
+/**
+ * Partner wallets with a custom share of the fee (basis points of the fee).
+ * The user still pays the same 8%; only the split between the fee wallet and
+ * the referrer changes. 4000 = 40% of the fee = 3.2% of the rent.
+ */
+export const REFERRAL_SHARE_OVERRIDES: Readonly<Record<string, number>> = {
+  "38u6NGpSwadrD8VVtFo9LiDdqj4Mt9xmz4Kbt2kSWEuE": 4000,
+};
+/** The referral share for a given referrer wallet, in basis points of the fee. */
+export const referralShareBps = (wallet?: string | null): number =>
+  (wallet && REFERRAL_SHARE_OVERRIDES[wallet]) || REFERRAL_SHARE_BPS;
 /** Referral codes: 3–16 lowercase letters, digits, "_" or "-". Users may pick their own. */
 export const REFERRAL_CODE_RE = /^[a-z0-9_-]{3,16}$/;
 /**
