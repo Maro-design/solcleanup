@@ -6,7 +6,7 @@
 import { ImageResponse } from "next/og";
 import { parseAddress } from "@/lib/scan";
 import { formatSol, plural, shortAddress } from "@/lib/format";
-import { OG, OG_SIZE, OgFrame, OgPoints, domainOf, genericOgImage, ogFonts } from "@/lib/og";
+import { OG, OG_SIZE, OgFrame, OgPoints, domainOf, fontOptions, genericOgImage } from "@/lib/og";
 import { SITE_URL } from "@/lib/site";
 import { checkForImage } from "@/lib/server/checkScan";
 
@@ -43,7 +43,7 @@ export default async function Image({ params }: { params: Promise<{ address: str
           </div>
         </OgFrame>
       ),
-      { ...OG_SIZE, fonts: await ogFonts() },
+      { ...OG_SIZE, ...(await fontOptions()) },
     );
   } catch {
     return genericOgImage(domain);
