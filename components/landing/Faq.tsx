@@ -7,44 +7,15 @@
  */
 import { motion, useReducedMotion } from "framer-motion";
 import { Plus } from "lucide-react";
-import { useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { FEE_PERCENT_LABEL, FEE_WALLET, MAX_CLOSES_PER_TX, solscanAccount } from "@/lib/config";
+import { FEE_WALLET, solscanAccount } from "@/lib/config";
+import { FAQ_ITEMS } from "@/lib/content/faq";
 import { Reveal } from "@/components/ui/Reveal";
 
-const ITEMS: { q: string; a: ReactNode }[] = [
-  {
-    q: "Why does an empty token account hold SOL?",
-    a: "Every account on Solana must hold a minimum balance, called rent, to stay open. A standard token account holds about 0.00204 SOL. When you sell or send all of a token, the account stays open and the rent stays locked in it until the account is closed.",
-  },
-  {
-    q: "How much will I get back?",
-    a: `About 0.00204 SOL per standard account, a little more for some Token-2022 accounts. You receive that rent minus the ${FEE_PERCENT_LABEL} service fee and the network fee. The exact numbers are shown before you sign.`,
-  },
-  {
-    q: "How is the fee charged?",
-    a: `As a SOL transfer inside each close transaction, equal to ${FEE_PERCENT_LABEL} of the rent that transaction returns, rounded down to the lamport. Because it's part of the same transaction, it's only paid if the closes succeed. The fee wallet is public and linked in the footer.`,
-  },
-  {
-    q: "Can this touch my tokens or NFTs?",
-    a: "Not unless you choose to. Empty accounts are selected by default and only closed. Dust under $2, other tokens, NFTs and compressed NFTs can be burned too, but only when you tick them yourself, and you confirm every burn by name before your wallet opens. Frozen accounts and wrapped SOL can never be selected. There are no token transfers or approvals.",
-  },
-  {
-    q: "Why are some empty accounts marked protected?",
-    a: "Empty accounts are still protected if they belong to an NFT, LP or liquid staking mint, are frozen, have a close authority other than you, or hold withheld Token-2022 fees. We'd rather leave a few lamports behind than close something unusual.",
-  },
-  {
-    q: "What happens if a transaction fails?",
-    a: `Nothing is closed in that transaction and no fee is taken for it. Accounts are processed in transactions of up to ${MAX_CLOSES_PER_TX}; if one fails, the rest still go through, and the result screen lists which succeeded with Solscan links.`,
-  },
-  {
-    q: "Which wallets work?",
-    a: "Phantom, Solflare, Backpack, Coinbase Wallet and other Solana wallets that support the Wallet Standard, including inside the Phantom and Solflare mobile browsers.",
-  },
-];
 
-function Item({ q, a }: { q: string; a: ReactNode }) {
+function Item({ q, a }: { q: string; a: string }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();
@@ -93,9 +64,9 @@ export function Faq() {
     <section id="faq" className="mx-auto w-full max-w-[1200px] scroll-mt-24 px-6" aria-labelledby="faq-title">
       <div className="grid items-start gap-12 lg:grid-cols-[5fr_7fr] lg:gap-16">
         <Reveal className="lg:sticky lg:top-24 lg:self-start">
-          <h2 id="faq-title" className="heading text-32 font-medium text-hi md:text-48">
+          <h1 id="faq-title" className="heading text-32 font-medium text-hi md:text-48">
             Questions
-          </h2>
+          </h1>
           <p className="mt-6 max-w-[360px] text-16 text-mid">
             Still unsure? Everything SolCleanup does is documented, and the fee wallet is public.
           </p>
@@ -114,7 +85,7 @@ export function Faq() {
           </ul>
         </Reveal>
         <Reveal delay={0.08} className="border-t border-line">
-          {ITEMS.map((i) => (
+          {FAQ_ITEMS.map((i) => (
             <Item key={i.q} {...i} />
           ))}
         </Reveal>
