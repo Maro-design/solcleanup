@@ -23,6 +23,8 @@ export const LIMITS = {
   referralCreate: { name: "referral-create", max: 5, windowSec: 600 },
   referralRename: { name: "referral-rename", max: 10, windowSec: 600 },
   claims: { name: "claims", max: 30, windowSec: 60 },
+  checkPage: { name: "check-page", max: 20, windowSec: 60 },
+  checkImage: { name: "check-image", max: 40, windowSec: 60 },
 } satisfies Record<string, Limit>;
 
 function clientIp(req: Request): string {
