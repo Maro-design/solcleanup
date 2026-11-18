@@ -8,7 +8,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, Link2, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import type { ScanResult } from "@/lib/scan";
+import type { CheckSummary } from "@/lib/checkSummary";
+import { VALUE_THRESHOLD_USD } from "@/lib/config";
 import { formatSol, formatUsd, plural, shortAddress } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { LinkButton } from "@/components/ui/Button";
@@ -18,7 +19,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 
 const SEGMENTS = [
   { key: "empty", label: "Ready to claim", dot: "bg-accent" },
-  { key: "dust", label: "Dust under $2", dot: "bg-[rgb(100_149_237/0.4)]" },
+  { key: "dust", label: `Dust under $${VALUE_THRESHOLD_USD}`, dot: "bg-[rgb(100_149_237/0.4)]" },
   { key: "protected", label: "Kept safe", dot: "bg-line-hover" },
 ] as const;
 
@@ -46,7 +47,8 @@ export function CheckResult({
   copied,
   onCopy,
 }: {
-  result: ScanResult;
+  /** Aggregates only: never token names, mints or balances. */
+  result: CheckSummary;
   isOwnWallet: boolean;
   copied: boolean;
   onCopy: () => void;
@@ -125,7 +127,7 @@ export function CheckResult({
       <div className="relative flex flex-col-reverse gap-3 border-t border-line bg-base/60 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <button type="button" onClick={onCopy} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg text-14 text-mid transition-colors hover:text-hi">
           {copied ? <Check size={16} strokeWidth={1.75} aria-hidden /> : <Link2 size={16} strokeWidth={1.5} aria-hidden />}
-          {copied ? "Link copied" : "Copy link"}
+          {copied ? "Link copied" : "Copy share link"}
         </button>
         {has &&
           (isOwnWallet ? (
