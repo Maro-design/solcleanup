@@ -7,7 +7,7 @@
  *   3. per account: [burnChecked, dust only] + closeAccount
  *      (owner = user, destination = user; at most 22 slots, a burn costs 3)
  *   4. SystemProgram.transfer → FEE_WALLET (floor(rent × FEE_BPS / 10 000))
- *      With a referrer, the same fee is split: REFERRAL_SHARE_BPS of it goes
+ *      With a referrer, the same fee is split: referralShareBps(referrer) of it goes
  *      to the referrer in a second transfer. The user pays the same total.
  *
  * The fee settles atomically with the closes: if the transaction fails,
@@ -32,7 +32,7 @@ import {
   CU_SIMULATION_LIMIT,
   FEE_BPS,
   FEE_WALLET,
-  REFERRAL_SHARE_BPS,
+  referralShareBps,
   LAMPORTS_PER_SIGNATURE,
   MAX_CLOSES_PER_TX,
   PRIORITY_FEE_MAX,
@@ -58,12 +58,13 @@ export interface Batch {
 }
 
 /** The referrer's cut of a fee, rounded down to the lamport. */
-export const referralFor = (feeLamports: number): number => Math.floor((feeLamports * REFERRAL_SHARE_BPS) / 10_000);
+export const referralFor = (feeLamports: number, referrer?: string): number =>
+  Math.floor((feeLamports * referralShareBps(referrer)) / 10_000);
 
 /** Recompute fee and referral for a given rent, keeping the batch's referrer. */
 function withRent(b: Batch, rent: number, referrer: string | undefined = b.referrer): Batch {
   const fee = feeFor(rent);
-  return { ...b, rentLamports: rent, feeLamports: fee, referrer, referralLamports: referrer ? referralFor(fee) : 0 };
+  return { ...b, rentLamports: rent, feeLamports: fee, referrer, referralLamports: referrer ? referralFor(fee, referrer) : 0 };
 }
 
 export interface SimulatedBatch extends Batch {
