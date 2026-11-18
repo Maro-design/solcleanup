@@ -42,9 +42,13 @@ export function AppGate() {
 
   if (!publicKey) {
     return (
-      <p className="mt-32 text-center text-14 text-meta" aria-live="polite">
-        {connecting ? "Connecting wallet…" : "Opening…"}
-      </p>
+      <>
+        {/* The connected view has its own h1; this keeps one on the waiting state too. */}
+        <h1 className="sr-only">SolCleanup dashboard</h1>
+        <p className="mt-32 text-center text-14 text-meta" aria-live="polite">
+          {connecting ? "Connecting wallet…" : "Opening…"}
+        </p>
+      </>
     );
   }
 
