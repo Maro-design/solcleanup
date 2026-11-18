@@ -14,7 +14,7 @@ const ARC = "M150 118 C 210 30, 310 30, 370 118";
 export function DocsArt() {
   const reduce = useReducedMotion();
   return (
-    <svg viewBox="0 0 520 190" className="h-auto w-full max-w-[560px]" role="img" aria-label="Rent moving from an empty token account into your wallet">
+    <svg viewBox="0 0 520 190" className="h-auto w-full max-w-[560px]" aria-hidden="true" focusable="false">
       {/* Arc */}
       <path d={ARC} fill="none" stroke="var(--border-hover)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 9">
         {!reduce && <animate attributeName="stroke-dashoffset" from="22" to="0" dur="1.2s" repeatCount="indefinite" />}
@@ -53,7 +53,7 @@ export function DocsArt() {
             <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.12;0.76;0.82;1" dur={DUR} repeatCount="indefinite" />
           </circle>
           <text x="406" y="66" textAnchor="middle" fontFamily="var(--font-geist-mono)" fontSize="13" fill="var(--accent-ink)" opacity="0">
-            +0.00204 SOL
+            +0.00149 SOL
             <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.8;0.86;0.96;1" dur={DUR} repeatCount="indefinite" />
             <animate attributeName="y" values="70;70;62;58;58" keyTimes="0;0.8;0.86;0.96;1" dur={DUR} repeatCount="indefinite" />
           </text>
