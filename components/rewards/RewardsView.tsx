@@ -9,12 +9,11 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Coins, Copy, Link2, Loader2, Pencil, Shuffle, X, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { FEE_PERCENT_LABEL, REFERRAL_CODE_RE, REFERRAL_SHARE_BPS, referralCodeMessage } from "@/lib/config";
+import { FEE_PERCENT_LABEL, REFERRAL_CODE_RE, referralCodeMessage, referralShareBps } from "@/lib/config";
 import { formatSol, shortAddress } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { ConnectButton } from "@/components/ui/ConnectButton";
 
-const SHARE = `${REFERRAL_SHARE_BPS / 100}%`;
 const ease = [0.16, 1, 0.3, 1] as const;
 
 type Data =
@@ -60,6 +59,7 @@ export function RewardsView() {
   const { publicKey, signMessage } = useWallet();
   const { connection } = useConnection();
   const wallet = publicKey?.toBase58() ?? null;
+  const SHARE = `${referralShareBps(wallet) / 100}%`;
 
   const [data, setData] = useState<Data>({ s: "idle" });
   const [funded, setFunded] = useState<boolean | null>(null);
