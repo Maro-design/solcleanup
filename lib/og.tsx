@@ -38,6 +38,12 @@ export async function ogFonts() {
   }
 }
 
+/** Spread into ImageResponse options; omits `fonts` entirely when none loaded, so the built-in font is used. */
+export async function fontOptions() {
+  const fonts = await ogFonts();
+  return fonts.length > 0 ? { fonts } : {};
+}
+
 /** The tray-and-coin mark in dark-theme colors (paper tile, ink cut-outs). */
 export function OgMark({ size }: { size: number }) {
   return (
@@ -105,7 +111,7 @@ export async function genericOgImage(domain: string, headline: [string, string] 
         </div>
       </OgFrame>
     ),
-    { ...OG_SIZE, fonts: await ogFonts() },
+    { ...OG_SIZE, ...(await fontOptions()) },
   );
 }
 
