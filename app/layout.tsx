@@ -9,11 +9,22 @@ export const metadata: Metadata = {
   title: "SolCleanup — reclaim SOL from empty token accounts",
   description:
     "Find the empty token accounts in your Solana wallet and close them to get back the rent they hold. Non-custodial, simulated before you sign, fee shown up front.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3210"),
+  // Absolute URLs for the preview image; production falls back to the real domain.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || (process.env.NODE_ENV === "production" ? "https://solcleanup.xyz" : "http://localhost:3210"),
+  ),
+  applicationName: "SolCleanup",
   openGraph: {
-    title: "SolCleanup",
-    description: "Reclaim the SOL locked in empty token accounts. Non-custodial.",
+    siteName: "SolCleanup",
+    title: "SolCleanup — Reclaim SOL from empty token accounts",
+    description: "Close the empty token accounts in your Solana wallet and get back the rent they hold. Non-custodial, simulated before you sign.",
+    url: "/",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SolCleanup — Reclaim SOL from empty token accounts",
+    description: "Close the empty token accounts in your Solana wallet and get back the rent they hold. Non-custodial, simulated before you sign.",
   },
   icons: { icon: "/icon.svg" },
 };
