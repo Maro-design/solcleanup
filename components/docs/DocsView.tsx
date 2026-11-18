@@ -111,7 +111,7 @@ const STATUSES: { name: string; dot: string; text: string; closable?: boolean }[
   {
     name: "Protected",
     dot: "bg-low",
-    text: "Anything worth $2 or more, NFTs, LP and liquid staking tokens, wrapped SOL, frozen accounts, accounts another wallet can close, Token-2022 accounts holding withheld fees, and anything that can't be priced.",
+    text: `Anything worth $${VALUE_THRESHOLD_USD} or more, NFTs, LP and liquid staking tokens, wrapped SOL, frozen accounts, accounts another wallet can close, Token-2022 accounts holding withheld fees, and anything that can't be priced.`,
   },
 ];
 
