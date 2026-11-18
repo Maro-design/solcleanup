@@ -1,7 +1,8 @@
 /**
  * Read-only market data from Jupiter: USD prices and token metadata.
  * Only public mint addresses are sent — never the wallet address.
- * Every function degrades gracefully: on failure it returns what it has.
+ * Every function degrades gracefully: on failure or when its time budget runs
+ * out it returns what it has, and a missing price is always treated as unpriced.
  */
 import { JUPITER_PRICE_URL, JUPITER_TOKENS_URL, WSOL_MINT } from "./config";
 
@@ -16,19 +17,35 @@ const TOKEN_CHUNK = 100;
 const TIMEOUT_MS = 8000;
 
 const CONCURRENCY = 3;
-const RETRIES = 2;
+/** How long a scan waits on Jupiter before treating the rest as unpriced. */
+const DEFAULT_BUDGET_MS = 12_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** GET JSON with a timeout and a short backoff on 429 / 5xx. */
-async function fetchJson(url: string): Promise<unknown> {
+/**
+ * Jupiter's public API rate-limits bursts. All lanes share one cooldown, so a
+ * 429 pauses every request instead of each lane hammering the API on its own.
+ */
+let cooldownUntil = 0;
+
+/** GET JSON with a timeout. Retries on 429 / 5xx until `deadline`, then gives up. */
+async function fetchJson(url: string, deadline: number): Promise<unknown> {
   for (let attempt = 0; ; attempt++) {
+    const wait = cooldownUntil - Date.now();
+    if (wait > 0) {
+      if (Date.now() + wait >= deadline) throw new Error("Out of time");
+      await sleep(wait);
+    }
+    const left = deadline - Date.now();
+    if (left <= 0) throw new Error("Out of time");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), Math.min(TIMEOUT_MS, left));
     try {
       const res = await fetch(url, { signal: controller.signal, headers: { accept: "application/json" } });
-      if ((res.status === 429 || res.status >= 500) && attempt < RETRIES) {
-        await sleep(600 * (attempt + 1));
+      if (res.status === 429 || res.status >= 500) {
+        const retryAfter = Number(res.headers.get("retry-after"));
+        const pause = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : Math.min(4000, 800 * 2 ** Math.min(attempt, 3));
+        cooldownUntil = Math.max(cooldownUntil, Date.now() + pause);
         continue;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -40,10 +57,10 @@ async function fetchJson(url: string): Promise<unknown> {
 }
 
 /** Run async tasks with bounded concurrency (public APIs rate-limit bursts). */
-async function runLimited<T>(items: T[], worker: (item: T) => Promise<void>): Promise<void> {
+async function runLimited<T>(items: T[], worker: (item: T) => Promise<void>, deadline = Infinity): Promise<void> {
   let next = 0;
   const lanes = Array.from({ length: Math.min(CONCURRENCY, items.length) }, async () => {
-    while (next < items.length) {
+    while (next < items.length && Date.now() < deadline) {
       const item = items[next++] as T;
       await worker(item);
     }
@@ -70,12 +87,13 @@ function readPrice(entry: unknown): number | null {
 /**
  * USD prices for the given mints. Mints without a price are absent from the map.
  */
-export async function fetchPrices(mints: string[]): Promise<Map<string, number>> {
+export async function fetchPrices(mints: string[], budgetMs = DEFAULT_BUDGET_MS): Promise<Map<string, number>> {
   const prices = new Map<string, number>();
   const unique = [...new Set(mints)];
+  const deadline = Date.now() + budgetMs;
   await runLimited(chunk(unique, PRICE_CHUNK), async (ids) => {
       try {
-        const body = await fetchJson(`${JUPITER_PRICE_URL}?ids=${ids.join(",")}`);
+        const body = await fetchJson(`${JUPITER_PRICE_URL}?ids=${ids.join(",")}`, deadline);
         // v3 returns { [mint]: {...} }, v2 returned { data: { [mint]: {...} } }
         const map = isRecord(body) && isRecord(body.data) ? body.data : body;
         if (!isRecord(map)) return;
@@ -86,7 +104,7 @@ export async function fetchPrices(mints: string[]): Promise<Map<string, number>>
       } catch {
         // Price unavailable — callers treat missing prices conservatively.
       }
-  });
+  }, deadline);
   return prices;
 }
 
@@ -96,12 +114,13 @@ export async function fetchSolPrice(): Promise<number | null> {
 }
 
 /** Symbol, name and logo for the given mints. */
-export async function fetchTokenMeta(mints: string[]): Promise<Map<string, TokenMeta>> {
+export async function fetchTokenMeta(mints: string[], budgetMs = DEFAULT_BUDGET_MS): Promise<Map<string, TokenMeta>> {
   const meta = new Map<string, TokenMeta>();
   const unique = [...new Set(mints)];
+  const deadline = Date.now() + budgetMs;
   await runLimited(chunk(unique, TOKEN_CHUNK), async (ids) => {
       try {
-        const body = await fetchJson(`${JUPITER_TOKENS_URL}?query=${ids.join(",")}`);
+        const body = await fetchJson(`${JUPITER_TOKENS_URL}?query=${ids.join(",")}`, deadline);
         if (!Array.isArray(body)) return;
         for (const t of body) {
           if (!isRecord(t) || typeof t.id !== "string") continue;
@@ -114,6 +133,6 @@ export async function fetchTokenMeta(mints: string[]): Promise<Map<string, Token
       } catch {
         // Metadata is cosmetic; the table falls back to the mint address.
       }
-  });
+  }, deadline);
   return meta;
 }
