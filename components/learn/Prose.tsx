@@ -69,9 +69,9 @@ export function Pre({ label, children }: { label?: string; children: string }) {
 export function Table({ head, rows, caption }: { head: string[]; rows: ReactNode[][]; caption?: string }) {
   return (
     <div className="mt-6 overflow-x-auto rounded-2xl border border-line">
-      <table className="w-full min-w-[520px] border-collapse text-left text-14">
-        {caption && <caption className="border-b border-line px-4 py-2.5 text-left text-12 text-meta">{caption}</caption>}
-        <thead>
+      <table className="block w-full border-collapse text-left text-14 sm:table sm:min-w-[520px]">
+        {caption && <caption className="block border-b border-line px-4 py-2.5 text-left text-12 text-meta sm:table-caption">{caption}</caption>}
+        <thead className="hidden sm:table-header-group">
           <tr className="bg-raised">
             {head.map((h) => (
               <th key={h} scope="col" className="px-4 py-3 font-medium text-hi">
@@ -80,11 +80,13 @@ export function Table({ head, rows, caption }: { head: string[]; rows: ReactNode
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="block divide-y divide-line sm:table-row-group">
           {rows.map((r, i) => (
-            <tr key={i}>
+            // Phones: each row becomes a small card with the column name above each value.
+            <tr key={i} className="block py-2 sm:table-row sm:py-0">
               {r.map((c, j) => (
-                <td key={j} className="px-4 py-3 align-top text-mid">
+                <td key={j} className={`block px-4 py-1 align-top sm:table-cell sm:py-3 ${j === 0 ? "font-medium text-hi sm:font-normal sm:text-mid" : "text-mid"}`}>
+                  {j > 0 && head[j] && <span className="block text-12 text-meta sm:hidden">{head[j]}</span>}
                   {c}
                 </td>
               ))}
