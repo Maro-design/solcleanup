@@ -357,6 +357,13 @@ export async function scanWallet(
   // Compressed NFTs (needs an RPC with the DAS API; silently skipped otherwise).
   const cnftsP = fetchCnfts(connection, ownerStr, sweep?.compressed).catch(() => []);
 
+  // Names first for empty accounts: they feed the LP name check on what gets
+  // closed by default, so they go ahead of price lookups in Jupiter's small
+  // rate-limit window. DAS doesn't list zero balances, so Jupiter covers these.
+  const meta = new Map<string, TokenMeta>(sweep?.meta ?? []);
+  const emptyMints = [...new Set(raws.filter((r) => r.amountRaw === "0" && !meta.has(r.mint)).map((r) => r.mint))];
+  if (emptyMints.length > 0) for (const [k, v] of await fetchTokenMeta(emptyMints)) meta.set(k, v);
+
   // Prices: Jupiter for every non-zero balance, within a time budget. SOL rides
   // along in the first request. Where the RPC also has a price we keep the
   // higher one, so a token is never under-valued into the burnable "dust" bucket.
@@ -367,12 +374,9 @@ export async function scanWallet(
   const prices = new Map(jup);
   for (const [mint, p] of sweep?.prices ?? []) prices.set(mint, Math.max(p, jup.get(mint) ?? 0));
 
-  // Names/logos only matter for rows a user can act on or needs to recognise:
-  // empty accounts (LP name check) and priced balances. DAS covers nearly all
-  // of them; Jupiter fills the gaps.
-  const meta = new Map<string, TokenMeta>(sweep?.meta ?? []);
-  const metaMints = [...new Set(raws.filter((r) => (r.amountRaw === "0" || prices.has(r.mint)) && !meta.has(r.mint)).map((r) => r.mint))];
-  if (metaMints.length > 0) for (const [k, v] of await fetchTokenMeta(metaMints)) meta.set(k, v);
+  // Names for priced balances DAS didn't name (cosmetic; usually none left).
+  const metaMints = [...new Set(raws.filter((r) => r.amountRaw !== "0" && prices.has(r.mint) && !meta.has(r.mint)).map((r) => r.mint))];
+  if (metaMints.length > 0) for (const [k, v] of await fetchTokenMeta(metaMints, 3_000)) meta.set(k, v);
   const solPriceUsd = prices.get(WSOL_MINT) ?? null;
 
   report("market", "Looking for NFTs", 0.88);
