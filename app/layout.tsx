@@ -6,6 +6,7 @@ import { THEME_SCRIPT } from "@/lib/theme-script";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { GITHUB_URL, X_URL } from "@/lib/config";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Nav } from "@/components/site/Nav";
 import "./globals.css";
 
 const SAME_AS = [X_URL, GITHUB_URL].filter((u) => u.startsWith("https://"));
@@ -87,7 +88,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <JsonLd data={SITE_JSON_LD} />
-        <Providers>{children}</Providers>
+        <Providers>
+          {/* One nav for every page, so it stays mounted across navigations and the pill can animate between tabs. */}
+          <Nav />
+          {children}
+        </Providers>
       </body>
     </html>
   );
