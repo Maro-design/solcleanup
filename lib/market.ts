@@ -17,8 +17,13 @@ const TOKEN_CHUNK = 100;
 const TIMEOUT_MS = 8000;
 
 const CONCURRENCY = 3;
-/** How long a scan waits on Jupiter before treating the rest as unpriced. */
-const DEFAULT_BUDGET_MS = 12_000;
+/**
+ * How long a scan waits on Jupiter before treating the rest as unpriced.
+ * The free API allows about 5 requests per 10 seconds, so waiting longer buys
+ * little: up to ~250 held tokens are priced at once; for bigger wallets the
+ * rest stay unpriced (and therefore protected) instead of stalling the scan.
+ */
+const DEFAULT_BUDGET_MS = 6_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -43,8 +48,19 @@ async function fetchJson(url: string, deadline: number): Promise<unknown> {
     try {
       const res = await fetch(url, { signal: controller.signal, headers: { accept: "application/json" } });
       if (res.status === 429 || res.status >= 500) {
+        // Wait exactly until the window resets when the API says when (server side);
+        // browsers usually can't read that header, so fall back to Retry-After, then
+        // to half the ~10 s window. If that runs past the deadline, the next loop gives up.
+        const reset = Number(res.headers.get("x-ratelimit-reset"));
         const retryAfter = Number(res.headers.get("retry-after"));
-        const pause = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : Math.min(4000, 800 * 2 ** Math.min(attempt, 3));
+        const pause =
+          res.status === 429 && Number.isFinite(reset) && reset > 1e9
+            ? Math.max(500, reset * 1000 - Date.now())
+            : Number.isFinite(retryAfter) && retryAfter > 0
+              ? retryAfter * 1000
+              : res.status === 429
+                ? 5_000
+                : Math.min(4000, 800 * 2 ** Math.min(attempt, 3));
         cooldownUntil = Math.max(cooldownUntil, Date.now() + pause);
         continue;
       }
