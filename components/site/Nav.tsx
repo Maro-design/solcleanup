@@ -58,11 +58,15 @@ const GOOEY_STYLE = {
   "--gn-y": "8px",
 } as const;
 
-/** Frosted frame matching the GooeyNav pill, shown on the side islands once the page scrolls. */
+/**
+ * Frosted frame matching the GooeyNav pill, shown on the side islands once the
+ * page scrolls. Desktop only: on smaller screens there's no centre pill, so
+ * content would show through the gap between islands; the whole bar frosts instead.
+ */
 function island(on: boolean): string {
   return `transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
     on
-      ? "bg-[var(--frame)] shadow-[inset_0_0_0_1px_var(--frame-edge),0_16px_32px_-16px_rgb(var(--shadow-ink)/0.18)] backdrop-blur-xl"
+      ? "xl:bg-[var(--frame)] xl:shadow-[inset_0_0_0_1px_var(--frame-edge),0_16px_32px_-16px_rgb(var(--shadow-ink)/0.18)] xl:backdrop-blur-xl"
       : "bg-transparent shadow-none"
   }`;
 }
@@ -127,7 +131,11 @@ export function Nav() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${
-        open ? "border-line bg-[var(--frame-solid)] backdrop-blur-md" : "border-transparent bg-transparent"
+        open
+          ? "border-line bg-[var(--frame-solid)] backdrop-blur-md"
+          : scrolled
+            ? "border-transparent bg-transparent max-xl:border-line max-xl:bg-[var(--frame-solid)] max-xl:backdrop-blur-md"
+            : "border-transparent bg-transparent"
       }`}
     >
       <AnimatePresence>
