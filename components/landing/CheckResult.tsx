@@ -18,25 +18,26 @@ import { ConnectButton } from "@/components/ui/ConnectButton";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const SEGMENTS = [
-  { key: "empty", label: "Ready to claim", dot: "bg-accent" },
-  { key: "dust", label: `Dust under $${VALUE_THRESHOLD_USD}`, dot: "bg-[rgb(100_149_237/0.4)]" },
-  { key: "protected", label: "Kept safe", dot: "bg-line-hover" },
+  { key: "empty", label: "Ready to claim", short: "To claim", dot: "bg-accent" },
+  { key: "dust", label: `Dust under $${VALUE_THRESHOLD_USD}`, short: "Dust", dot: "bg-[rgb(100_149_237/0.4)]" },
+  { key: "protected", label: "Kept safe", short: "Safe", dot: "bg-line-hover" },
 ] as const;
 
-function Tile({ dot, label, value, hint, delay, reduce }: { dot: string; label: string; value: number; hint: ReactNode; delay: number; reduce: boolean }) {
+function Tile({ dot, label, short, value, hint, delay, reduce }: { dot: string; label: string; short: string; value: number; hint: ReactNode; delay: number; reduce: boolean }) {
   return (
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease, delay }}
-      className="rounded-2xl border border-line bg-base px-4 py-3.5"
+      className="min-w-0 rounded-2xl border border-line bg-base px-3 py-3 sm:px-4 sm:py-3.5"
     >
-      <p className="flex items-center gap-2 text-12 text-meta">
-        <span className={`size-2 rounded-full ${dot}`} aria-hidden />
-        {label}
+      <p className="flex items-start gap-1.5 text-12 leading-4 text-meta sm:items-center sm:gap-2">
+        <span className={`mt-1 size-2 shrink-0 rounded-full sm:mt-0 ${dot}`} aria-hidden />
+        <span className="sm:hidden">{short}</span>
+        <span className="max-sm:hidden">{label}</span>
       </p>
       <p className="mt-1.5 font-mono text-20 leading-none text-hi tnum">{value.toLocaleString("en-US")}</p>
-      <p className="mt-1.5 text-12 text-meta">{hint}</p>
+      <p className="mt-1.5 hidden text-12 text-meta sm:block">{hint}</p>
     </motion.div>
   );
 }
@@ -114,10 +115,10 @@ export function CheckResult({
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <Tile reduce={reduce} delay={0.3} dot={SEGMENTS[0].dot} label={SEGMENTS[0].label} value={t.empty} hint="Closed for you" />
-              <Tile reduce={reduce} delay={0.38} dot={SEGMENTS[1].dot} label={SEGMENTS[1].label} value={t.dust} hint="Optional, your pick" />
-              <Tile reduce={reduce} delay={0.46} dot={SEGMENTS[2].dot} label={SEGMENTS[2].label} value={t.protected} hint={`${Math.round((t.protected / total) * 100)}% never touched`} />
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <Tile reduce={reduce} delay={0.3} dot={SEGMENTS[0].dot} label={SEGMENTS[0].label} short={SEGMENTS[0].short} value={t.empty} hint="Closed for you" />
+              <Tile reduce={reduce} delay={0.38} dot={SEGMENTS[1].dot} label={SEGMENTS[1].label} short={SEGMENTS[1].short} value={t.dust} hint="Optional, your pick" />
+              <Tile reduce={reduce} delay={0.46} dot={SEGMENTS[2].dot} label={SEGMENTS[2].label} short={SEGMENTS[2].short} value={t.protected} hint={`${Math.round((t.protected / total) * 100)}% never touched`} />
             </div>
           </>
         )}
