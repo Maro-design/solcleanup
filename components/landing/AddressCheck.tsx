@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * Read-only check for any wallet — no connection needed. Submitting goes to
- * /check/<address>, a shareable page that is scanned on the server. If the
- * server couldn't finish (very large wallet, rate limit), the page hands the
- * address back here and the scan runs in the browser instead.
+ * Read-only check for any wallet — no connection needed. Submitting scans in
+ * the browser straight away (live progress) and puts /check/<address> in the
+ * address bar as the shareable link. Opening that link fresh renders it on the
+ * server; if the server couldn't finish (very large wallet, rate limit), the
+ * page hands the address back here and the browser scans instead.
  */
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { PublicKey } from "@solana/web3.js";
@@ -54,14 +55,13 @@ export function AddressCheck({ address, initial = null }: Props) {
       return;
     }
     setInvalid(false);
-    const next = key.toBase58();
-    if (next === address) {
-      // Same page: rescan in the browser for fresh numbers.
-      if (target?.equals(key)) void scan(key);
-      else setTarget(key);
-      return;
-    }
-    router.push(`/check/${next}`);
+    // Scan right here in the browser, with live progress, and put the shareable
+    // link in the address bar without a server round trip. The server-rendered
+    // /check/<address> page is for links opened or unfurled elsewhere.
+    const path = `/check/${key.toBase58()}`;
+    if (window.location.pathname !== path) window.history.pushState(null, "", path);
+    if (target?.equals(key)) void scan(key);
+    else setTarget(key);
   };
 
   const shareUrl = (owner: string) => `${window.location.origin}/check/${owner}`;
