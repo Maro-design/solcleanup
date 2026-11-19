@@ -23,7 +23,7 @@ import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 function StatCard({ icon: Icon, label, children, foot, hero = false }: { icon: LucideIcon; label: string; children: ReactNode; foot: ReactNode; hero?: boolean }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-6 shadow-[0_1px_0_rgb(255_255_255/0.04)_inset,0_18px_40px_-24px_rgb(var(--shadow-ink)/0.45)] ${
+      className={`relative h-full overflow-hidden rounded-2xl border p-4 sm:p-6 shadow-[0_1px_0_rgb(255_255_255/0.04)_inset,0_18px_40px_-24px_rgb(var(--shadow-ink)/0.45)] ${
         hero ? "border-[rgb(100_149_237/0.35)] bg-raised" : "border-line bg-raised"
       }`}
     >
@@ -36,9 +36,9 @@ function StatCard({ icon: Icon, label, children, foot, hero = false }: { icon: L
         >
           <Icon size={18} strokeWidth={1.75} aria-hidden />
         </span>
-        <p className="text-14 text-mid">{label}</p>
+        <p className="text-14 leading-5 text-mid">{label}</p>
       </div>
-      <div className="relative mt-5">{children}</div>
+      <div className="relative mt-4 sm:mt-5">{children}</div>
       <p className="relative mt-2 text-12 text-meta tnum">{foot}</p>
     </div>
   );
@@ -226,9 +226,9 @@ export function Dashboard({ owner: ownerKey, readOnly = false }: { owner: Public
       {result && (
         <>
           {/* Summary */}
-          <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr]">
-            {/* What the user walks away with, already net of the fee. */}
-            <div className="sm:col-span-2 lg:col-span-1">
+          <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[1.35fr_1fr_1fr]">
+            {/* What the user walks away with, already net of the fee. On phones the two smaller cards share a row. */}
+            <div className="col-span-2 lg:col-span-1">
               <StatCard
                 hero
                 icon={Wallet}
