@@ -81,7 +81,7 @@ async function checkWallet(address: string, limit: Limit, budgetMs: number): Pro
 }
 
 /** For the page and its metadata: deduplicated within one request. */
-export const checkForPage = cache((address: string) => checkWallet(address, LIMITS.checkPage, 7_000));
+export const checkForPage = cache((address: string) => checkWallet(address, LIMITS.checkPage, 5_000));
 
 /** For the preview image (fetched separately by link unfurlers). */
 export const checkForImage = (address: string) => checkWallet(address, LIMITS.checkImage, 6_000);
