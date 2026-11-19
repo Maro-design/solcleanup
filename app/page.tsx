@@ -3,7 +3,6 @@ import { pageMetadata } from "@/lib/seo";
 import { FEE_PERCENT_LABEL } from "@/lib/config";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { Hero } from "@/components/landing/Hero";
 
@@ -38,7 +37,6 @@ export default function Home() {
   return (
     <>
       <JsonLd data={APP_JSON_LD} />
-      <Nav />
       <main id="main">
         <Hero />
       </main>
