@@ -40,3 +40,10 @@ plugins/impeccable-live.client.ts
 app/plugins/impeccable-live.client.ts
 src/plugins/impeccable-live.client.ts
 # impeccable-live-ignore-end
+
+# Internal, never public
+LAUNCH.md
+.impeccable/
+tsconfig.tsbuildinfo
+# Brand source files (profile pictures etc.), kept local
+brand/
