@@ -69,7 +69,7 @@ they succeed.
 
 ## Fee
 
-- **8% of the rent each transaction returns** (`FEE_BPS = 800` in
+- **5% of the rent each transaction returns** (`FEE_BPS = 500` in
   [`lib/config.ts`](lib/config.ts)), rounded down to the lamport.
 - No fee on compressed-NFT burns, which return no rent.
 - Fee wallet:
