@@ -337,10 +337,13 @@ export async function planClose(
   // An empty wallet can't receive less than the rent-exempt minimum. Rather than
   // fail the claim, that batch pays its whole fee to the service wallet.
   const referralFits = (b: Batch) => !b.referrer || b.referralLamports === 0 || referrerLamports !== 0 || b.referralLamports >= rentMinimum;
+  // Same fee, no referral transfer. (Not withRent(b, rent, undefined): its
+  // default parameter would quietly put the referrer back.)
+  const withoutReferral = (b: Batch): Batch => ({ ...b, referrer: undefined, referralLamports: 0 });
 
   const simulated: SimulatedBatch[] = [];
   for (const original of batches) {
-    let batch = referralFits(original) ? original : withRent(original, original.rentLamports, undefined);
+    let batch = referralFits(original) ? original : withoutReferral(original);
     let result: { unitsConsumed: number | null; error: string | null; reclaimed: number | null };
     try {
       result = await simulate(connection, owner, batch, priority, blockhash);
@@ -348,7 +351,7 @@ export async function planClose(
       // less than its scan-time balance). Re-simulate if the amount changed.
       if (!result.error && result.reclaimed !== null && result.reclaimed >= 0 && result.reclaimed !== batch.rentLamports) {
         batch = withRent(batch, result.reclaimed);
-        if (!referralFits(batch)) batch = withRent(batch, batch.rentLamports, undefined);
+        if (!referralFits(batch)) batch = withoutReferral(batch);
         result = await simulate(connection, owner, batch, priority, blockhash);
       }
     } catch (e) {
