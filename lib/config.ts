@@ -6,19 +6,19 @@
 /** Service fee destination. Shown publicly in the footer and before signing. */
 export const FEE_WALLET = "HXFZid9dFdTa2ARCf7MktM2xQaw9hguxX1Aoaa9Shamp";
 
-/** Service fee in basis points of the rent reclaimed in each transaction. 800 = 8%. */
-export const FEE_BPS = 800; // 8% — single source of truth, easy to change
+/** Service fee in basis points of the rent reclaimed in each transaction. 500 = 5%. */
+export const FEE_BPS = 500; // 5% — single source of truth, easy to change
 
 /**
  * Referrals: share of the service fee (not extra) paid to the referrer, in
- * basis points of the fee. 2500 = 25% of the 8% fee = 2% of the rent. Paid by
- * a second transfer in the same transaction; the user pays the same 8%.
+ * basis points of the fee. 2500 = 25% of the 5% fee = 1.25% of the rent. Paid by
+ * a second transfer in the same transaction; the user pays the same 5%.
  */
 export const REFERRAL_SHARE_BPS = 2500;
 /**
  * Partner wallets with a custom share of the fee (basis points of the fee).
- * The user still pays the same 8%; only the split between the fee wallet and
- * the referrer changes. 4000 = 40% of the fee = 3.2% of the rent.
+ * The user still pays the same 5%; only the split between the fee wallet and
+ * the referrer changes. 4000 = 40% of the fee = 2% of the rent.
  */
 export const REFERRAL_SHARE_OVERRIDES: Readonly<Record<string, number>> = {
   "38u6NGpSwadrD8VVtFo9LiDdqj4Mt9xmz4Kbt2kSWEuE": 4000,
@@ -109,5 +109,5 @@ export const solscanAccount = (address: string) => `https://solscan.io/account/$
 export const solscanTx = (signature: string) => `https://solscan.io/tx/${signature}`;
 export const solscanToken = (mint: string) => `https://solscan.io/token/${mint}`;
 
-/** Fee as a human percentage string, e.g. "8%". */
+/** Fee as a human percentage string, e.g. "5%". */
 export const FEE_PERCENT_LABEL = `${(FEE_BPS / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
