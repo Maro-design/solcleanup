@@ -438,12 +438,10 @@ function HowMuchLocked() {
 function Fees() {
   const r100 = 100 * TOKEN_ACCOUNT_RENT;
   const ours = feeOn(TOKEN_ACCOUNT_RENT);
-  const rates: [string, number][] = [
-    ["2%", 200],
-    ["5%", 500],
-    [`${FEE_PERCENT_LABEL} (SolCleanup)`, FEE_BPS],
-    ["15%", 1500],
-  ];
+  // Reference rates plus ours, sorted; a reference rate equal to ours is folded into our row.
+  const reference: [string, number][] = [200, 500, 1500].filter((bps) => bps !== FEE_BPS).map((bps) => [pct(bps), bps]);
+  const rates: [string, number][] = [...reference, [`${FEE_PERCENT_LABEL} (SolCleanup)`, FEE_BPS]];
+  rates.sort((a, b) => a[1] - b[1]);
   return (
     <Prose>
       <p>
